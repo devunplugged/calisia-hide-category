@@ -20,6 +20,7 @@ class calisia_hide_category{
         add_filter( 'get_terms', array($this,'exclude_category'), 10, 3 );
         add_filter( 'woocommerce_product_categories_widget_args', array($this,'exclude_widget_category') );
         add_action( 'woocommerce_product_query', array($this,'exclude_from_shop_page') );  
+        add_filter( 'wp_nav_menu_objects', array($this,'filter_menu'), 10, 2 );
     }
 
     //hide on shop page (if categories are being displayed)
@@ -27,7 +28,7 @@ class calisia_hide_category{
         $new_terms = array();
         if ( in_array( 'product_cat', $taxonomies ) /*&& !is_admin()*/ && is_page() ) {
             foreach ( $terms as $key => $term ) {
-                if ( ! in_array( $term->slug, $this->category_slugs ) ) {
+                if ( !in_array( $term->slug, $this->category_slugs ) ) {
                     $new_terms[] = $term;
                 }
             }
@@ -40,7 +41,9 @@ class calisia_hide_category{
     public function exclude_widget_category( $args ) {
         $term_ids = array();
         foreach($this->category_slugs as $slug){
-            $term_ids[] = get_term_by( 'slug', $slug, 'product_cat' )->term_id;
+            $term = get_term_by( 'slug', $slug, 'product_cat' );
+            if($term != false)
+                $term_ids[] = $term->term_id;
         }
         $args['exclude'] = $term_ids;
         
@@ -48,7 +51,7 @@ class calisia_hide_category{
     }
 
     //Exclude products from a particular category on the shop page
-    function exclude_from_shop_page( $q ) {
+    public function exclude_from_shop_page( $q ) {
         $tax_query = (array) $q->get( 'tax_query' );
         $tax_query[] = array(
                'taxonomy' => 'product_cat',
@@ -57,6 +60,21 @@ class calisia_hide_category{
                'operator' => 'NOT IN'
         );
         $q->set( 'tax_query', $tax_query );
+    
+    }
+
+    //hide categories from nav menu
+    public function filter_menu( $objects, $args ) {
+        $links = array();
+        foreach($this->category_slugs as $slug){
+            $links[] = get_term_link( $slug, 'product_cat' );
+        }
+        foreach ( $objects as $key => $object ){
+            if(in_array($object->url, $links) === true){
+                unset($objects[$key]);
+            }
+        }   
+        return $objects;
     
     }
 }
