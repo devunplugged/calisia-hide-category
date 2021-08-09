@@ -1,0 +1,1 @@
+<p><?php echo $args['text']; ?></p>
