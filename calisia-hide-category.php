@@ -100,7 +100,7 @@ class calisia_hide_category{
     //hide on shop page (if categories are being displayed)
     public function exclude_category( $terms, $taxonomies, $args ) {
         $new_terms = [];
-        if ( in_array( 'product_cat', $taxonomies ) /*&& !is_admin()*/ && is_page() ) {
+        if ( in_array( 'product_cat', $taxonomies ) && !is_admin() && is_page() ) {
             foreach ( $terms as $key => $term ) {
                 if ( !in_array( $term->slug, $this->category_slugs ) ) {
                     $new_terms[] = $term;
@@ -139,10 +139,17 @@ class calisia_hide_category{
 
     //hide categories from nav menu
     public function filter_menu( $objects, $args ) {
+        //arrow function (PHP >= 7.4); returns term_link for every slug supplyed
+        //$links = array_map( fn($slug) => get_term_link( $slug, 'product_cat' ), $this->category_slugs);
+
+        //the same as above; anonimous function
+        $links = array_map( function($slug){ return get_term_link( $slug, 'product_cat' ); }, $this->category_slugs);
+        /*
+        //the same as above; without anonimous function
         $links = [];
         foreach($this->category_slugs as $slug){
             $links[] = get_term_link( $slug, 'product_cat' );
-        }
+        }*/
         foreach ( $objects as $key => $object ){
             if(in_array($object->url, $links) === true){
                 unset($objects[$key]);
